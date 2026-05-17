@@ -8,10 +8,6 @@ load_dotenv(BASE_DIR / '.env.local')
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# DEBUG = os.environ.get("DEBUG", 'True') == 'True'
-
-# ALLOWED_HOSTS = []
-
 INSTALLED_APPS = [
     # DJANGO APPS
     'django.contrib.admin',

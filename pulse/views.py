@@ -1,10 +1,22 @@
+from django.db import transaction
+from django.http import JsonResponse
+from django.db.models.query import QuerySet
 from rest_framework.views import APIView
-from .serializers import RegistrationSerializer, LoginSerializer
+from .serializers import RegistrationSerializer, LoginSerializer, PriceAlertSerializer
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from .models import PriceAlert
+import random
+
+MOCK_PRICES = {
+    'DEL-BOM': (3000, 7000),
+    'BLR-HYD': (1500, 4000),
+    'DEL-BLR': (4000, 9000),
+    'BOM-GOA': (2000, 5000),
+}
 
 class RegisterView(APIView):
     authentication_classes = []
@@ -47,5 +59,28 @@ class LoginView(APIView):
             'refresh': str(token)
         }, status=status.HTTP_200_OK)
 
+class AlertViewSet(viewsets.ModelViewSet):
+    http_method_names = ['get', 'post', 'delete']
+    serializer_class = PriceAlertSerializer
+
+    def get_queryset(self) -> QuerySet:
+        return PriceAlert.objects.filter(user=self.request.user)
     
+    def perform_create(self, serializer) -> None:
+        serializer.save(user=self.request.user)
+    
+    def destroy(self, request, *args, **kwargs) -> Response:
+        alert = self.get_object()
+        alert.status = PriceAlert.Status.INACTIVE
+        alert.save()
+        return Response({"status": "inactive"}, status=status.HTTP_200_OK)
+    
+def flight_price(request) -> JsonResponse:
+    route = request.GET.get('route', '')
+    price_range = MOCK_PRICES.get(route)
+    if not price_range:
+        return JsonResponse({'error': 'Route not found.'}, status=status.HTTP_404_NOT_FOUND)
+    price = random.randint(*price_range)
+    return JsonResponse({'route': route, 'price': price}, status=status.HTTP_200_OK)
+
 
