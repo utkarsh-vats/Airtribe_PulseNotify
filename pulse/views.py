@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.http import JsonResponse
 from django.db.models.query import QuerySet
 from rest_framework.views import APIView

@@ -99,7 +99,12 @@ CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    'check_prices': {
+        'task': 'pulse.tasks.check_prices',
+        'schedule': 60.0,
+    },
+}
 
 LANGUAGE_CODE = 'en-us'
 
