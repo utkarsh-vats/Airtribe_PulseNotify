@@ -267,6 +267,10 @@ Collection variables auto-save tokens on register/login — no manual copy-paste
 ![Test Results](screenshots/Tests/Ran_Test_Cases.png)
 
 ---
+*10 Tests passing — unit tests + Duplicate user, admin summary, alert deactivation and mock price feed.*
+![Test Results 02](screenshots/Tests/Ran_Test_Cases_02.png)
+
+---
 ## Environment Configuration
 
 Settings are split across three files:
