@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.db.models.query import QuerySet
+from django.db.models import Count
 from rest_framework.views import APIView
 from .serializers import RegistrationSerializer, LoginSerializer, PriceAlertSerializer
 from rest_framework.response import Response
@@ -7,8 +8,10 @@ from rest_framework import status, viewsets
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import PriceAlert
+from .models import PriceAlert, NotificationLog
 import random
+from .permissions import IsAdminUser
+
 
 MOCK_PRICES = {
     'DEL-BOM': (3000, 7000),
@@ -82,4 +85,27 @@ def flight_price(request) -> JsonResponse:
     price = random.randint(*price_range)
     return JsonResponse({'route': route, 'price': price}, status=status.HTTP_200_OK)
 
+class AdminSummaryView(APIView):
+    permission_classes = [IsAdminUser]
+    def get(self, request):
+        total_alerts = PriceAlert.objects.count()
+        active_alerts = PriceAlert.objects.filter(status=PriceAlert.Status.ACTIVE).count()
+        triggered_alerts = PriceAlert.objects.filter(status=PriceAlert.Status.TRIGGERED).count()
+        total_notifications = NotificationLog.objects.count()
+        top_routes = PriceAlert.objects.values('origin', 'destination').annotate(alert_count=Count('id')).order_by('-alert_count')
+        top_routes_data = [
+            {
+                'route': f"{route['origin']}-{route['destination']}",
+                'alert_count': route['alert_count']
+            }
+            for route in top_routes
+        ]
+        return Response({
+            'total_alerts': total_alerts,
+            'active_alerts': active_alerts,
+            'triggered_alerts': triggered_alerts,
+            'total_notifications': total_notifications,
+            'top_routes': top_routes_data
+        }, status=status.HTTP_200_OK)
+    
 

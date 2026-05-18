@@ -9,5 +9,6 @@ urlpatterns = [
     *router.urls,
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/login/', LoginView.as_view(), name='login'),
-    path('flights/price/', flight_price, name='flight_price')
+    path('flights/price/', flight_price, name='flight_price'),
+    path('admin/summary/', AdminSummaryView.as_view(), name='summary'),
 ]
