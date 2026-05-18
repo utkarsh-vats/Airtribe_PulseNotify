@@ -24,6 +24,26 @@ services:
       - db
       - redis
 
+  celery-worker:
+    build: .
+    command: celery -A pulsenotify worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file: .env.local
+    depends_on:
+      - db
+      - redis
+  
+  celery-beat:
+    build: .
+    command: celery -A pulsenotify beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file: .env.local
+    depends_on:
+      - db
+      - redis
+
 volumes:
   pgdata:
 

@@ -15,3 +15,4 @@ project_plan.md
 project_requirements.md
 postman_tests.md
 requirements.local.txt
+celerybeat-schedule*

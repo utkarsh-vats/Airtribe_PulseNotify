@@ -1,9 +1,6 @@
-from pulsenotify.celery import celery_app
 from celery import shared_task
 from .models import PriceAlert, NotificationLog
 import requests
-from django.http import JsonResponse
-from rest_framework import status
 
 API_DOMAIN = "http://web:8000"
 API_URL = f"{API_DOMAIN}/api/flights/price/"
@@ -37,7 +34,7 @@ def check_prices():
 
 
 @shared_task
-async def send_notification(alert_id, triggered_price):
+def send_notification(alert_id, triggered_price):
     alert = PriceAlert.objects.get(id=alert_id)
     message = (
         f"Price alert triggered for {alert.origin}-{alert.destination} "
