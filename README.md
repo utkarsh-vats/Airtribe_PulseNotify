@@ -4,6 +4,23 @@
 
 PulseNotify is a flight price monitoring backend that lets users set price alerts for flight routes. When prices drop below a user-defined threshold, the system automatically fires a notification. Built with Django REST Framework, Celery, Redis, and PostgreSQL — all containerized with Docker.
 
+## Beyond the Assignment
+
+Changes and enhancements made on top of the original spec:
+
+| Area           | Assignment Spec                   | What We Did                                                                          |
+| -------------- | --------------------------------- | ------------------------------------------------------------------------------------ |
+| Primary keys   | Default integer IDs               | UUID4 via abstract BaseModel on all pulse models                                     |
+| Mock routes    | 4 hardcoded routes                | 60+ Indian domestic routes in a separate `mock_data.py`                              |
+| Price response | Route + price only                | Added origin/destination airport names                                               |
+| Tests          | 3 required (model-level)          | 10 tests — 6 model-level + 4 endpoint-level                                          |
+| API docs       | Not required                      | Auto-generated Swagger UI via drf-spectacular at `/api/docs/`                        |
+| Logging        | Not required                      | Python logging in Celery tasks + LOGGING config in settings                          |
+| Admin panel    | Not required                      | All models registered with list_display, filters, and search                         |
+| Docker         | DB + Redis only, manual runserver | Fully containerized — web, db, redis, celery-worker, celery-beat in one compose file |
+| Error handling | Not specified                     | try/except in send_notification for deleted alerts, request timeouts in check_prices |
+| Timestamps     | created_at only                   | BaseModel adds updated_at (auto_now) to all models                                   |
+
 ## How It Works
 
 ```
@@ -37,6 +54,7 @@ GET /api/admin/summary/  →  Admin sees stats
 - **Database:** PostgreSQL 18
 - **Cache/Broker:** Redis 7
 - **Containerization:** Docker & Docker Compose
+- **API Docs:** drf-spectacular (Swagger UI)
 
 ## Project Structure
 
@@ -49,14 +67,16 @@ pulsenotify/
 │   ├── signals.py            # post_save → auto-create UserProfile
 │   ├── permissions.py        # IsAdminUser custom permission
 │   ├── tasks.py              # check_prices (Beat) + send_notification (async)
+│   ├── mock_data.py          # 60+ Indian domestic routes with price ranges
+│   ├── admin.py              # Model registration with filters and search
 │   ├── urls.py               # App URL routing
-│   └── tests.py              # 6 unit tests
+│   └── tests.py              # 10 unit tests
 ├── pulsenotify/              # Django project config
 │   ├── celery.py             # Celery app configuration
 │   ├── __init__.py           # Celery app import
 │   ├── urls.py               # Root URL conf
 │   └── settings/
-│       ├── base.py           # Shared config (apps, JWT, Celery, DB)
+│       ├── base.py           # Shared config (apps, JWT, Celery, DB, logging)
 │       ├── local.py          # Dev overrides (DEBUG=True)
 │       └── production.py     # Prod overrides (DEBUG=False)
 ├── docker-compose.yml        # All 5 services
@@ -131,9 +151,17 @@ This starts 5 containers:
 docker compose run --rm web python manage.py migrate
 ```
 
-### 5. Verify
+### 5. Create a superuser (for Django admin panel)
+
+```bash
+docker compose run --rm web python manage.py createsuperuser
+```
+
+### 6. Verify
 
 - Open `http://localhost:8000` — Django should respond
+- Open `http://localhost:8000/api/docs/` — Swagger API documentation
+- Open `http://localhost:8000/admin/` — Django admin panel
 - Watch terminal logs — Celery Beat fires `check_prices` every 60 seconds
 - Celery Worker picks up tasks and processes them
 
@@ -148,15 +176,23 @@ docker compose run --rm web python manage.py migrate
 | 5   | DELETE | `/api/alerts/<id>/`                 | JWT         | Deactivate an alert (soft delete)        |
 | 6   | GET    | `/api/flights/price/?route=DEL-BOM` | Public      | Mock price feed (random price)           |
 | 7   | GET    | `/api/admin/summary/`               | JWT + Admin | Platform-wide alert & notification stats |
+| —   | GET    | `/api/docs/`                        | Public      | Swagger API documentation                |
+| —   | GET    | `/api/schema/`                      | Public      | OpenAPI schema (JSON)                    |
 
-### Available Mock Routes
+### Available Mock Routes (60+)
 
-| Route   | Price Range     |
-| ------- | --------------- |
-| DEL-BOM | ₹3,000 – ₹7,000 |
-| BLR-HYD | ₹1,500 – ₹4,000 |
-| DEL-BLR | ₹4,000 – ₹9,000 |
-| BOM-GOA | ₹2,000 – ₹5,000 |
+Covers all major Indian domestic hubs. Sample routes:
+
+| Route   | Price Range     | Origin                               | Destination                            |
+| ------- | --------------- | ------------------------------------ | -------------------------------------- |
+| DEL-BOM | ₹3,000 – ₹7,000 | Delhi (Indira Gandhi International)  | Mumbai (Chhatrapati Shivaji Maharaj)   |
+| BLR-HYD | ₹1,500 – ₹4,000 | Bangalore (Kempegowda International) | Hyderabad (Rajiv Gandhi International) |
+| DEL-BLR | ₹4,000 – ₹9,000 | Delhi                                | Bangalore                              |
+| BOM-GOA | ₹2,000 – ₹5,000 | Mumbai                               | Goa (Manohar International)            |
+| MAA-CCU | ₹3,500 – ₹7,000 | Chennai                              | Kolkata                                |
+| DEL-SXR | ₹3,000 – ₹8,000 | Delhi                                | Srinagar                               |
+
+Full route list available in `pulse/mock_data.py`. The price feed response includes origin and destination airport names.
 
 ## Celery Tasks
 
@@ -165,10 +201,12 @@ docker compose run --rm web python manage.py migrate
 - Calls the mock price endpoint for each route
 - Compares current price against each alert's threshold
 - Fires `send_notification.delay()` if price ≤ threshold
+- Logs every price check and error with Python logging
 
 **send_notification** (async, triggered by check_prices)
 - Creates a NotificationLog entry
 - Marks the alert as TRIGGERED so it doesn't fire again
+- Handles deleted alerts gracefully (DoesNotExist catch + warning log)
 
 ## Running Tests
 
@@ -176,10 +214,18 @@ docker compose run --rm web python manage.py migrate
 docker compose run --rm web python manage.py test
 ```
 
-6 tests covering:
+10 tests covering:
+
+**Model-level tests:**
 - Threshold comparison logic (below, above, equal)
 - NotificationLog creation with correct message
 - Alert scoping (users only see their own alerts)
+
+**Endpoint-level tests:**
+- Register returns 400 on duplicate username
+- Admin summary returns 403 for regular user
+- Alert deactivation changes status to INACTIVE
+- Mock price feed returns 404 for unknown route
 
 ## Postman Collection
 
@@ -199,11 +245,9 @@ Collection variables auto-save tokens on register/login — no manual copy-paste
 *New user registered successfully — returns JWT access token and role.*
 ![Register Success](screenshots/Auth/%231%20-%20Register_User.png)
 
-
 ---
 *Attempting to register an existing username — returns 400 with error message.*
 ![Register Duplicate](screenshots/Auth/%232%20-%20Register_Duplicate_User.png)
-
 
 ---
 *Valid credentials — returns 200 with fresh JWT access and refresh tokens.*
@@ -267,15 +311,14 @@ Collection variables auto-save tokens on register/login — no manual copy-paste
 ![Test Results](screenshots/Tests/Ran_Test_Cases.png)
 
 ---
-*10 Tests passing — unit tests + Duplicate user, admin summary, alert deactivation and mock price feed.*
+*10 tests passing — unit tests + duplicate user, admin summary, alert deactivation and mock price feed.*
 ![Test Results 02](screenshots/Tests/Ran_Test_Cases_02.png)
 
----
 ## Environment Configuration
 
 Settings are split across three files:
 
-- `base.py` — Shared config (installed apps, middleware, JWT, Celery, database)
+- `base.py` — Shared config (installed apps, middleware, JWT, Celery, database, logging)
 - `local.py` — Development overrides (DEBUG=True, ALLOWED_HOSTS=['*'])
 - `production.py` — Production overrides (DEBUG=False, restricted hosts)
 
