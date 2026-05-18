@@ -11,14 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import PriceAlert, NotificationLog
 import random
 from .permissions import IsAdminUser
-
-
-MOCK_PRICES = {
-    'DEL-BOM': (3000, 7000),
-    'BLR-HYD': (1500, 4000),
-    'DEL-BLR': (4000, 9000),
-    'BOM-GOA': (2000, 5000),
-}
+from .mock_data import MOCK_PRICES, AIRPORT_CODES
 
 class RegisterView(APIView):
     authentication_classes = []
@@ -83,7 +76,15 @@ def flight_price(request) -> JsonResponse:
     if not price_range:
         return JsonResponse({'error': 'Route not found.'}, status=status.HTTP_404_NOT_FOUND)
     price = random.randint(*price_range)
-    return JsonResponse({'route': route, 'price': price}, status=status.HTTP_200_OK)
+    return JsonResponse(
+        {
+            'route': route,
+            'price': price,
+            'origin': AIRPORT_CODES.get(route.split('-')[0], ""),
+            'destination': AIRPORT_CODES.get(route.split('-')[1], "")
+        }, 
+        status=status.HTTP_200_OK
+    )
 
 class AdminSummaryView(APIView):
     permission_classes = [IsAdminUser]
