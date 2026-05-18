@@ -195,36 +195,64 @@ Collection variables auto-save tokens on register/login — no manual copy-paste
 ## Screenshots
 
 ### Auth Endpoints
+
 ![Register Success](screenshots/Auth/%231%20-%20Register_User.png)
+*New user registered successfully — returns JWT access token and role.*
+
 ![Register Duplicate](screenshots/Auth/%232%20-%20Register_Duplicate_User.png)
+*Attempting to register an existing username — returns 400 with error message.*
+
 ![Login Success](screenshots/Auth/%233%20-%20Login_User.png)
+*Valid credentials — returns 200 with fresh JWT access and refresh tokens.*
+
 ![Invalid Login](screenshots/Auth/%234%20-%20Login_User_Wrong_Password.png)
+*Wrong password — returns 401 Unauthorized.*
 
 ### Alert Endpoints
+
 ![Get Alerts](screenshots/Alerts/%235%20-%20Get_Alerts.png)
+*Listing all alerts for the authenticated user — scoped to request.user only.*
+
 ![Set Alerts](screenshots/Alerts/%236%20-%20Set_Alerts.png)
+*Creating a new price alert for DEL-BOM with ₹4500 threshold — returns 201.*
+
 ![Delete Alert](screenshots/Alerts/%237%20-%20Delete_Alert_by_ID.png)
+*Soft-deleting an alert — status set to inactive, row preserved in DB.*
+
 ![Set Alerts without JWT](screenshots/Alerts/%2311%20-%20Set_Alerts_without_JWT.png)
+*Attempting to create an alert without a JWT token — returns 401.*
+
 ![Delete Unauthorized](screenshots/Alerts/%2312%20-%20Delete_Alert_by_ID_Unauthorized.png)
+*User2 attempting to delete User1's alert — returns 404, never exposing another user's data.*
 
 ### Flights
+
 ![Valid Route](screenshots/Flights/%238%20-%20Flight_Price_for_valid_route.png)
+*Mock price feed returning a random price for DEL-BOM within the ₹3000–₹7000 range.*
+
 ![Invalid Route](screenshots/Flights/%239%20-%20Flight_Price_for_invalid_route.png)
+*Requesting an unknown route — returns 404 with error message.*
 
 ### Admin
-![Admin Summary](screenshots/Admin/%2310%20-%20Admin_Summary.png)
-![Non-Admin 403](screenshots/Admin/%2313%20-%20Admin_Summary_as_Non_Admin.png)
 
-### Tests
-![Test Results](screenshots/Tests/Ran_Test_Cases.png)
+![Admin Summary](screenshots/Admin/%2310%20-%20Admin_Summary.png)
+*Admin-only endpoint returning platform-wide stats — total alerts, active/triggered counts, top routes.*
+
+![Non-Admin 403](screenshots/Admin/%2313%20-%20Admin_Summary_as_Non_Admin.png)
+*Regular user attempting to access admin summary — returns 403 Forbidden.*
 
 ### Celery Tasks
-<!-- ![Celery Beat Logs](screenshots/celery_beat_logs.png) -->
-<!-- ![Notification Triggered](screenshots/notification_triggered.png) -->
 
-### Database
-<!-- ![PGAdmin Tables](screenshots/pgadmin_tables.png) -->
-<!-- ![NotificationLog Entries](screenshots/notification_log_entries.png) -->
+![Celery Beat Logs](screenshots/Celery/celery_beat_logs.png)
+*Celery Beat firing check_prices every 60 seconds on schedule.*
+
+![Notification Triggered](screenshots/Celery/notification_triggered.png)
+*Worker processing check_prices → price below threshold → send_notification task received and succeeded.*
+
+### Tests
+
+![Test Results](screenshots/Tests/Ran_Test_Cases.png)
+*All 6 unit tests passing — threshold logic, notification log creation, and alert scoping.*
 
 ## Environment Configuration
 
