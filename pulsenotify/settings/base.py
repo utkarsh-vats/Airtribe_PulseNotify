@@ -19,6 +19,7 @@ INSTALLED_APPS = [
 
     # THIRD PARTY APPS
     'rest_framework',
+    'drf_spectacular',
 
     # LOCAL APPS
     'pulse',
@@ -86,6 +87,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PulseNotify API',
+    'DESCRIPTION': 'Flight price alert system with real-time monitoring',
+    'VERSION': '1.0.0',
 }
 
 SIMPLE_JWT = {
