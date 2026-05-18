@@ -195,65 +195,78 @@ Collection variables auto-save tokens on register/login — no manual copy-paste
 ## Screenshots
 
 ### Auth Endpoints
-
-![Register Success](screenshots/Auth/%231%20-%20Register_User.png)
+---
 *New user registered successfully — returns JWT access token and role.*
+![Register Success](screenshots/Auth/%231%20-%20Register_User.png)
 
-![Register Duplicate](screenshots/Auth/%232%20-%20Register_Duplicate_User.png)
+
+---
 *Attempting to register an existing username — returns 400 with error message.*
+![Register Duplicate](screenshots/Auth/%232%20-%20Register_Duplicate_User.png)
 
-![Login Success](screenshots/Auth/%233%20-%20Login_User.png)
+
+---
 *Valid credentials — returns 200 with fresh JWT access and refresh tokens.*
+![Login Success](screenshots/Auth/%233%20-%20Login_User.png)
 
-![Invalid Login](screenshots/Auth/%234%20-%20Login_User_Wrong_Password.png)
+---
 *Wrong password — returns 401 Unauthorized.*
+![Invalid Login](screenshots/Auth/%234%20-%20Login_User_Wrong_Password.png)
 
 ### Alert Endpoints
-
-![Get Alerts](screenshots/Alerts/%235%20-%20Get_Alerts.png)
+---
 *Listing all alerts for the authenticated user — scoped to request.user only.*
+![Get Alerts](screenshots/Alerts/%235%20-%20Get_Alerts.png)
 
-![Set Alerts](screenshots/Alerts/%236%20-%20Set_Alerts.png)
+---
 *Creating a new price alert for DEL-BOM with ₹4500 threshold — returns 201.*
+![Set Alerts](screenshots/Alerts/%236%20-%20Set_Alerts.png)
 
-![Delete Alert](screenshots/Alerts/%237%20-%20Delete_Alert_by_ID.png)
+---
 *Soft-deleting an alert — status set to inactive, row preserved in DB.*
+![Delete Alert](screenshots/Alerts/%237%20-%20Delete_Alert_by_ID.png)
 
-![Set Alerts without JWT](screenshots/Alerts/%2311%20-%20Set_Alerts_without_JWT.png)
+---
 *Attempting to create an alert without a JWT token — returns 401.*
+![Set Alerts without JWT](screenshots/Alerts/%2311%20-%20Set_Alerts_without_JWT.png)
 
-![Delete Unauthorized](screenshots/Alerts/%2312%20-%20Delete_Alert_by_ID_Unauthorized.png)
+---
 *User2 attempting to delete User1's alert — returns 404, never exposing another user's data.*
+![Delete Unauthorized](screenshots/Alerts/%2312%20-%20Delete_Alert_by_ID_Unauthorized.png)
 
 ### Flights
-
-![Valid Route](screenshots/Flights/%238%20-%20Flight_Price_for_valid_route.png)
+---
 *Mock price feed returning a random price for DEL-BOM within the ₹3000–₹7000 range.*
+![Valid Route](screenshots/Flights/%238%20-%20Flight_Price_for_valid_route.png)
 
-![Invalid Route](screenshots/Flights/%239%20-%20Flight_Price_for_invalid_route.png)
+---
 *Requesting an unknown route — returns 404 with error message.*
+![Invalid Route](screenshots/Flights/%239%20-%20Flight_Price_for_invalid_route.png)
 
 ### Admin
-
-![Admin Summary](screenshots/Admin/%2310%20-%20Admin_Summary.png)
+---
 *Admin-only endpoint returning platform-wide stats — total alerts, active/triggered counts, top routes.*
+![Admin Summary](screenshots/Admin/%2310%20-%20Admin_Summary.png)
 
-![Non-Admin 403](screenshots/Admin/%2313%20-%20Admin_Summary_as_Non_Admin.png)
+---
 *Regular user attempting to access admin summary — returns 403 Forbidden.*
+![Non-Admin 403](screenshots/Admin/%2313%20-%20Admin_Summary_as_Non_Admin.png)
 
 ### Celery Tasks
-
-![Celery Beat Logs](screenshots/Celery/celery_beat_logs.png)
+---
 *Celery Beat firing check_prices every 60 seconds on schedule.*
+![Celery Beat Logs](screenshots/Celery/celery_beat_logs.png)
 
-![Notification Triggered](screenshots/Celery/notification_triggered.png)
+---
 *Worker processing check_prices → price below threshold → send_notification task received and succeeded.*
+![Notification Triggered](screenshots/Celery/notification_triggered.png)
 
 ### Tests
-
-![Test Results](screenshots/Tests/Ran_Test_Cases.png)
+---
 *All 6 unit tests passing — threshold logic, notification log creation, and alert scoping.*
+![Test Results](screenshots/Tests/Ran_Test_Cases.png)
 
+---
 ## Environment Configuration
 
 Settings are split across three files:
