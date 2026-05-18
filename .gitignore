@@ -7,6 +7,9 @@ venv
 .env.local 
 .env*.local 
 *.env*.local 
+.env.prod 
+.env*.prod 
+*.env*.prod 
 /__pycache__ 
 __pycache__ 
 __pycache__/
