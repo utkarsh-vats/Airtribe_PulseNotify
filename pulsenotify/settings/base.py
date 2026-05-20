@@ -18,12 +18,14 @@ INSTALLED_APPS = [
     # THIRD PARTY APPS
     'rest_framework',
     'drf_spectacular',
+    'corsheaders',
 
     # LOCAL APPS
     'pulse',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -146,6 +148,10 @@ CACHES = {
         'LOCATION': CELERY_BROKER_URL
     }
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
 
 TRAVELPAYOUTS_API_TOKEN = os.environ.get("TRAVELPAYOUTS_API_TOKEN")
 
