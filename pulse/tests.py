@@ -138,7 +138,7 @@ class MockPriceFeedTest(TestCase):
     def test_mock_price_feed_response_for_unknown_route(self):
         response = self.client.get('/api/flights/price/?route=XXX-YYY')
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {'error': 'Route not found.'})
+        self.assertEqual(response.json(), {'error': 'Invalid route.'})
 
 
 
