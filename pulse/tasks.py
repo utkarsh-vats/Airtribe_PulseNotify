@@ -2,6 +2,8 @@ import logging
 from celery import shared_task
 from .models import PriceAlert, NotificationLog
 from .services import PriceService
+from datetime import timedelta
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +15,16 @@ def check_prices():
     if not active_alerts:
         logger.warning("No active alerts found.")
         return
+    
+    expired = active_alerts.filter(
+        travel_date__isnull=False,
+        travel_date__lt=timezone.now().date()
+    )
+    expired_count = expired.update(status=PriceAlert.Status.EXPIRED)
+    if expired_count:
+        logger.info(f"Expired {expired_count} alerts past travel date.")
+
+    active_alerts = active_alerts.filter(status=PriceAlert.Status.ACTIVE)
     
     routes = active_alerts.values_list('origin', 'destination').distinct()
     for origin, destination in routes:
@@ -31,9 +43,18 @@ def check_prices():
         
         route_alerts = active_alerts.filter(origin=origin, destination=destination)
         for alert in route_alerts:
-            logger.info(f"Checking price for {alert.origin}-{alert.destination}: ₹{current_price}")
+            logger.info(f"Checking price for {alert.origin.code}-{alert.destination.code}: ₹{current_price}")
             if current_price <= float(alert.threshold_price):
-                send_notification.delay(str(alert.id), current_price)
+                if alert.last_notified_price is None:
+                    send_notification.delay(str(alert.id), current_price)
+                else:
+                    if alert.last_notified_at:
+                        cooldown = timedelta(minutes=alert.notification_cooldown_minutes)
+                        if timezone.now() - alert.last_notified_at < cooldown:
+                            logger.debug(f"Skipping {alert.origin.code}-{alert.destination.code}: cooldown active")
+                            continue
+                    if current_price < float(alert.last_notified_price):
+                        send_notification.delay(str(alert.id), current_price)
 
 
 @shared_task
@@ -41,7 +62,7 @@ def send_notification(alert_id, triggered_price):
     try:
         alert = PriceAlert.objects.get(id=alert_id)
         message = (
-            f"Price alert triggered for {alert.origin}-{alert.destination} "
+            f"Price alert triggered for {alert.origin.code}-{alert.destination.code} "
             f"is now ₹{triggered_price} - below your threshold of  "
             f"₹{alert.threshold_price}."
         )
@@ -50,8 +71,9 @@ def send_notification(alert_id, triggered_price):
             triggered_price=triggered_price,
             message=message
         )
-        logger.info(f"Notification sent for {alert.origin}-{alert.destination} with alertID {alert_id}: {message}")
-        alert.status = PriceAlert.Status.TRIGGERED
+        logger.info(f"Notification sent for {alert.origin.code}-{alert.destination.code} with alertID {alert_id}: {message}")
+        alert.last_notified_at = timezone.now()
+        alert.last_notified_price = triggered_price
         alert.save()
     except PriceAlert.DoesNotExist:
         logger.warning(f"Alert with ID {alert_id} does not exist - may have been deleted.")

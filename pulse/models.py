@@ -44,16 +44,14 @@ class PriceAlert(BaseModel):
         EXPIRED = 'expired', 'Expired'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='alerts')
-    # origin = models.ForeignKey(Airport, on_delete=models.CASCADE, related_name='departures')
-    # destination = models.ForeignKey(Airport, on_delete=models.CASCADE, related_name='arrivals')
-    origin = models.CharField(max_length=10)
-    destination = models.CharField(max_length=10)
+    origin = models.ForeignKey(Airport, on_delete=models.CASCADE, related_name='departures')
+    destination = models.ForeignKey(Airport, on_delete=models.CASCADE, related_name='arrivals')
     threshold_price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
-    # travel_date = models.DateField(blank=True, null=True)
-    # last_notified_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    # last_notified_at = models.DateTimeField(blank=True, null=True)
-    # notification_cooldown_minutes = models.PositiveIntegerField(default=360)
+    travel_date = models.DateField(blank=True, null=True)
+    last_notified_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    last_notified_at = models.DateTimeField(blank=True, null=True)
+    notification_cooldown_minutes = models.PositiveIntegerField(default=360)
 
     def __str__(self) -> str:
         return f"{self.origin}-{self.destination} @ ₹{self.threshold_price}"
