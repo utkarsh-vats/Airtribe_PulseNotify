@@ -12,6 +12,7 @@ from .models import PriceAlert, NotificationLog, Airport
 from .permissions import IsAdminUser
 from .mock_data import AIRPORT_CODES
 from .services import PriceService
+from rest_framework.pagination import PageNumberPagination
 
 price_service = PriceService()
 
@@ -120,11 +121,17 @@ class AdminSummaryView(APIView):
             'top_routes': top_routes_data
         }, status=status.HTTP_200_OK)
     
+class AirportPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class AirportViewSet(viewsets.ReadOnlyModelViewSet):
     authentication_classes = []
     permission_classes = []
     
     http_method_names = ['get']
+    pagination_class = AirportPagination
     serializer_class = AirportSerializer
 
     def get_queryset(self) -> QuerySet:
