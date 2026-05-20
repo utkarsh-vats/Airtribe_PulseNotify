@@ -1,14 +1,22 @@
 from django.test import TestCase
-from .models import PriceAlert, NotificationLog
+from .models import PriceAlert, NotificationLog, Airport
 from django.contrib.auth.models import User
 
-class PriceThresholdTest(TestCase):
+class AirportMixin:
     def setUp(self):
+        # super().setUp()
+        Airport.objects.get_or_create(code='DEL', defaults={'name': 'Indira Gandhi International', 'city': 'Delhi', 'country': 'India'})
+        Airport.objects.get_or_create(code='BOM', defaults={'name': 'Chhatrapati Shivaji Maharaj', 'city': 'Mumbai', 'country': 'India'})
+        Airport.objects.get_or_create(code='BLR', defaults={'name': 'Kempegowda International Airport', 'city': 'Bengaluru', 'country': 'India'})
+
+class PriceThresholdTest(AirportMixin, TestCase):
+    def setUp(self):
+        super().setUp()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.alert = PriceAlert.objects.create(
             user=self.user,
-            origin='DEL',
-            destination='BOM',
+            origin_id='DEL',
+            destination_id='BOM',
             threshold_price=4500.00,
             status=PriceAlert.Status.ACTIVE
         )
@@ -25,13 +33,14 @@ class PriceThresholdTest(TestCase):
         current_price = 4500
         self.assertTrue(current_price <= float(self.alert.threshold_price))
 
-class NotificationLogTest(TestCase):
+class NotificationLogTest(AirportMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.alert = PriceAlert.objects.create(
             user=self.user,
-            origin='DEL',
-            destination="BOM",
+            origin_id='DEL',
+            destination_id="BOM",
             threshold_price=4500.00,
             status=PriceAlert.Status.ACTIVE
         )
@@ -47,21 +56,22 @@ class NotificationLogTest(TestCase):
         self.assertEqual(log.alert, self.alert)
         self.assertIn("DEL-BOM", log.message)
 
-class AlertScopingTest(TestCase):
+class AlertScopingTest(AirportMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.user1 = User.objects.create_user(username='user1', password='password1')
         self.user2 = User.objects.create_user(username='user2', password='password2')
         self.alert1 = PriceAlert.objects.create(
             user=self.user1,
-            origin="DEL",
-            destination="BOM",
+            origin_id="DEL",
+            destination_id="BOM",
             threshold_price=4500.00,
             status=PriceAlert.Status.ACTIVE
         )
         self.alert2 = PriceAlert.objects.create(
             user=self.user2,
-            origin="DEL",
-            destination="BLR",
+            origin_id="DEL",
+            destination_id="BLR",
             threshold_price=5000.00,
             status=PriceAlert.Status.ACTIVE
         )
@@ -69,11 +79,11 @@ class AlertScopingTest(TestCase):
     def test_user_only_sees_own_alerts(self):
         user1_alerts = PriceAlert.objects.filter(user=self.user1)
         self.assertEqual(user1_alerts.count(), 1)
-        self.assertEqual(user1_alerts.first().destination, "BOM")       # type: ignore
+        self.assertEqual(user1_alerts.first().destination_id, "BOM")       # type: ignore
 
     def test_user_cannot_see_other_users_alerts(self):
         user2_alerts = PriceAlert.objects.filter(user=self.user1)
-        self.assertNotEqual(user2_alerts.first().destination, "BLR")    # type: ignore
+        self.assertNotEqual(user2_alerts.first().destination_id, "BLR")    # type: ignore
 
 class DuplicateUserTest(TestCase):
     def setUp(self):
@@ -108,13 +118,14 @@ class AdminSummaryViewTest(TestCase):
         response = self.client.get('/api/admin/summary/', HTTP_AUTHORIZATION=f"Bearer {accessToken}")
         self.assertEqual(response.status_code, 403)
 
-class DeactivationAlertTest(TestCase):
+class DeactivationAlertTest(AirportMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.alert = PriceAlert.objects.create(
             user=self.user,
-            origin='DEL',
-            destination='BOM',
+            origin_id='DEL',
+            destination_id='BOM',
             threshold_price=4500.00,
             status=PriceAlert.Status.ACTIVE
         )
