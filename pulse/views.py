@@ -1,14 +1,14 @@
 from django.http import JsonResponse
 from django.db.models.query import QuerySet
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework.views import APIView
-from .serializers import RegistrationSerializer, LoginSerializer, PriceAlertSerializer
+from .serializers import RegistrationSerializer, LoginSerializer, PriceAlertSerializer, AirportSerializer
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import PriceAlert, NotificationLog
+from .models import PriceAlert, NotificationLog, Airport
 from .permissions import IsAdminUser
 from .mock_data import AIRPORT_CODES
 from .services import PriceService
@@ -120,4 +120,36 @@ class AdminSummaryView(APIView):
             'top_routes': top_routes_data
         }, status=status.HTTP_200_OK)
     
+class AirportViewSet(viewsets.ReadOnlyModelViewSet):
+    authentication_classes = []
+    permission_classes = []
+    
+    http_method_names = ['get']
+    serializer_class = AirportSerializer
+
+    def get_queryset(self) -> QuerySet:
+        queryset = Airport.objects.all().order_by("code")
+        country = self.request.query_params.get("country")
+        city = self.request.query_params.get("city")
+        name = self.request.query_params.get("name")
+        search = self.request.query_params.get("search")
+        
+        
+        if country:
+            queryset = queryset.filter(country__icontains=country)
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        if search:
+            queryset = queryset.filter(
+                Q(code__icontains=search) |
+                Q(name__icontains=search) |
+                Q(city__icontains=search) |
+                Q(country__icontains=search)
+            )
+
+        return queryset
+
 

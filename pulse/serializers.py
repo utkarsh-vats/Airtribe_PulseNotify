@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserProfile, PriceAlert, NotificationLog
+from .models import UserProfile, PriceAlert, NotificationLog, Airport
 
 class RegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
@@ -27,4 +27,10 @@ class NotificationLogSerializer(serializers.ModelSerializer):
         model = NotificationLog
         fields = ['id', 'alert', 'triggered_price', 'message', 'notified_at', 'updated_at']
         read_only_fields = ['id', 'notified_at', 'updated_at']
+
+class AirportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Airport
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
 

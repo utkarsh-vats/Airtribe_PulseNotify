@@ -5,6 +5,7 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'alerts', AlertViewSet, basename='alerts')
+router.register(r'airports', AirportViewSet, basename='airports')
 
 urlpatterns = [
     *router.urls,
