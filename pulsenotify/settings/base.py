@@ -140,6 +140,15 @@ LOGGING = {
     },
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': CELERY_BROKER_URL
+    }
+}
+
+TRAVELPAYOUTS_API_TOKEN = os.environ.get("TRAVELPAYOUTS_API_TOKEN")
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'

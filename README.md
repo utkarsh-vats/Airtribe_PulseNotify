@@ -287,7 +287,9 @@ sudo crontab -e
 | MAA-CCU | ₹3,500 – ₹7,000 | Chennai                              | Kolkata                                |
 | DEL-SXR | ₹3,000 – ₹8,000 | Delhi                                | Srinagar                               |
 
-Full list in `pulse/mock_data.py` with IATA code reference.
+<!-- Full list in `pulse/mock_data.py` with IATA code reference. -->
+Full list in *[pulse/mock_data.py](pulse/mock_data.py)* with IATA code reference.
+
 
 ---
 

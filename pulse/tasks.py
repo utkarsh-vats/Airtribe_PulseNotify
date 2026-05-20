@@ -1,12 +1,11 @@
+import logging
 from celery import shared_task
 from .models import PriceAlert, NotificationLog
-import requests
-import logging
+from .services import PriceService
 
 logger = logging.getLogger(__name__)
 
-API_DOMAIN = "http://web:8000"
-API_URL = f"{API_DOMAIN}/api/flights/price/"
+price_service = PriceService()
 
 @shared_task
 def check_prices():
@@ -17,20 +16,19 @@ def check_prices():
     
     routes = active_alerts.values_list('origin', 'destination').distinct()
     for origin, destination in routes:
-        route = f"{origin}-{destination}"
-        
+        # ************
+        # Previously used internal HTTP call — now handled by PriceService with auto-fallback to mock data
+        # ************
         try:
-            response = requests.get(
-                API_URL, 
-                params={'route': route}, 
-                timeout=5
-            )
-            if response.status_code != 200:
+            price = price_service.get_price(origin, destination)
+            if price is None:
+                logger.warning(f"No price found for route {origin}-{destination}")
                 continue
-            current_price = response.json().get('price')
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching price for route {route}: {e}")
+            current_price = float(price)
+        except Exception as e:
+            logger.error(f"Error fetching price for route {origin}-{destination}: {e}")
             continue
+        
         route_alerts = active_alerts.filter(origin=origin, destination=destination)
         for alert in route_alerts:
             logger.info(f"Checking price for {alert.origin}-{alert.destination}: ₹{current_price}")

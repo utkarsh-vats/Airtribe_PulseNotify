@@ -9,9 +9,11 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import PriceAlert, NotificationLog
-import random
 from .permissions import IsAdminUser
-from .mock_data import MOCK_PRICES, AIRPORT_CODES
+from .mock_data import AIRPORT_CODES
+from .services import PriceService
+
+price_service = PriceService()
 
 class RegisterView(APIView):
     authentication_classes = []
@@ -72,16 +74,25 @@ class AlertViewSet(viewsets.ModelViewSet):
     
 def flight_price(request) -> JsonResponse:
     route = request.GET.get('route', '')
-    price_range = MOCK_PRICES.get(route)
-    if not price_range:
-        return JsonResponse({'error': 'Route not found.'}, status=status.HTTP_404_NOT_FOUND)
-    price = random.randint(*price_range)
+    try:
+        origin, destination = route.split('-')
+    except ValueError:
+        return JsonResponse({'error': 'Invalid route format.'}, status=status.HTTP_400_BAD_REQUEST)
+    if origin not in AIRPORT_CODES or destination not in AIRPORT_CODES:
+        return JsonResponse({'error': 'Invalid route.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        price = price_service.get_price(origin, destination)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    if not price:
+        return JsonResponse({'error': 'Price not found.'}, status=status.HTTP_404_NOT_FOUND)
+
     return JsonResponse(
         {
             'route': route,
             'price': price,
-            'origin': AIRPORT_CODES.get(route.split('-')[0], ""),
-            'destination': AIRPORT_CODES.get(route.split('-')[1], "")
+            'origin': f"{origin}: {AIRPORT_CODES.get(origin, '')}",
+            'destination': f"{destination}: {AIRPORT_CODES.get(destination, '')}"
         }, 
         status=status.HTTP_200_OK
     )
